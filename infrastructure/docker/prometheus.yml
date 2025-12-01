@@ -1,0 +1,29 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Hyperledger Fabric Orderer
+  - job_name: 'fabric-orderer'
+    static_configs:
+      - targets: ['orderer.aam-security-experiment.com:9443']
+    metrics_path: /metrics
+
+  # Hyperledger Fabric Peers
+  - job_name: 'fabric-peers'
+    static_configs:
+      - targets:
+        - 'peer0.org1.aam-security-experiment.com:9444'
+        - 'peer0.org2.aam-security-experiment.com:9445'
+    metrics_path: /metrics
+
+  # PostgreSQL (if using postgres_exporter)
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['aam-security-experiment-postgres:9187']
+    metrics_path: /metrics

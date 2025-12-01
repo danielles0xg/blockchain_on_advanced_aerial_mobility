@@ -1,0 +1,64 @@
+# =============================================================================
+# AAM Security Experiment - Docker Compose
+# SIMPLE ENTRY POINT - Start here!
+# =============================================================================
+#
+# Usage:
+#   docker-compose up -d          # Start all services
+#   docker-compose up -d postgres # Start PostgreSQL only
+#   docker-compose logs -f        # View logs
+#   docker-compose down           # Stop all services
+#
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # PostgreSQL - Baseline (ALWAYS START WITH THIS)
+  # ===========================================================================
+  postgres:
+    image: postgres:16
+    container_name: aam-postgres
+    environment:
+      POSTGRES_USER: aam_user
+      POSTGRES_PASSWORD: aam_password
+      POSTGRES_DB: aam_security
+    ports:
+      - "5433:5432"  # Using 5433 to avoid conflict with local PostgreSQL
+    volumes:
+      - ./database/postgres/schema:/docker-entrypoint-initdb.d:ro
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aam_user -d aam_security"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ===========================================================================
+  # Solana Local Validator (Optional - for Solana tests)
+  # ===========================================================================
+  solana:
+    image: solanalabs/solana:v1.18.22
+    container_name: aam-solana
+    command: >
+      solana-test-validator
+      --rpc-port 8899
+      --bind-address 0.0.0.0
+      --reset
+      --quiet
+    ports:
+      - "8899:8899"   # RPC
+      - "8900:8900"   # WebSocket
+    volumes:
+      - solana_data:/root/.config/solana
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:8899 -X POST -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"getHealth\"}' | grep -q ok || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  postgres_data:
+  solana_data:
