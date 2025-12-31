@@ -2,7 +2,19 @@
 
 Empirical comparison of **PostgreSQL (hash-chained)**, **Hyperledger Fabric (permissioned blockchain)**, and **Solana (public blockchain)** for tamper-evident security-event logging in Advanced Air Mobility (AAM) systems — eVTOLs, UAVs, and urban airspace operations.
 
-> **TL;DR** — Using a real UAV cyberattack dataset of **157,501 events** across six attack types, we measured latency, throughput, and tamper-evidence. PostgreSQL hits **1.39 ms P95** at 5,000 TPS; Hyperledger Fabric is **22× slower** (2,182 ms) and Solana **152× slower** (15,157 ms). Blockchain *cannot* meet the <100 ms real-time alerting bar, but is viable for audit trails. The recommendation is a **hybrid**: PostgreSQL for real-time + periodic blockchain anchoring for multi-party audit.
+> ### TL;DR
+>
+> Can a blockchain keep a **tamper-proof security log** for flying taxis and drones — and still be fast enough to raise real-time alerts? We replayed **157,501 real UAV cyberattack events** through three systems and timed every write.
+>
+> | System | P95 latency | Verdict |
+> |---|---|---|
+> | 🟦 **PostgreSQL** (hash-chained DB) | **1.39 ms** | ✅ Fast enough for real-time **and** audit |
+> | 🟪 **Hyperledger Fabric** (permissioned) | **2,182 ms** · 22× slower | ⚠️ Audit trails only |
+> | 🟥 **Solana** (public chain) | **15,157 ms** · 152× slower | ❌ Too slow for either |
+>
+> **Bottom line:** blockchain can't hit the **<100 ms** real-time bar — but its multi-party trust is worth it for audit. So use **both**: PostgreSQL for live alerts, with a periodic blockchain *anchor* for tamper-proof, multi-party-verifiable audit (the [hybrid architecture](#recommended-hybrid-architecture)).
+>
+> <sub>📊 Numbers are from a real run on **2025-12-19** (Apple M2). See [Experiment Design](#experiment-design) for how, and [Where the numbers come from](#where-the-numbers-come-from) for the data.</sub>
 
 ---
 
@@ -39,11 +51,48 @@ flowchart TB
 
 ### Research Questions
 
-| | Question | Answer |
-|---|---|---|
-| **RQ1** | Can blockchain meet AAM real-time alerts (P95 < 100 ms)? | **No** — Fabric 22×, Solana 152× over budget |
-| **RQ2** | Max sustainable throughput per system? | PostgreSQL 5,000+ TPS; Fabric ~0.5–500 TPS; Solana ~2 TPS |
-| **RQ3** | Does blockchain's overhead buy justified security? | Only when **multi-party trust** is required; hash-chains suffice for single operators |
+We set out to answer three questions:
+
+**RQ1 — Can blockchain keep up with real-time alerting?** *(target: P95 < 100 ms)*
+→ **No.** Hyperledger Fabric is **22× over budget**, Solana **152×**. Only PostgreSQL clears the bar — with 72× headroom.
+
+**RQ2 — How much load can each system take?**
+→ PostgreSQL sustained **5,000+ TPS** at P95 < 12 ms. Fabric managed ~0.5 TPS via CLI (≈200–500 TPS with the SDK, per literature); Solana ~2 TPS once you wait for finality.
+
+**RQ3 — Is blockchain's overhead actually worth it?**
+→ **Only when you need multi-party trust.** A hash-chained database already detects tampering; blockchain adds *distributed* trust — no single party controls the log — at a steep latency cost. Worth it for regulator/insurer audit, overkill for one trusted operator.
+
+---
+
+## Experiment Design
+
+**Goal:** measure the real cost of tamper-evident logging on each system under identical, realistic load.
+
+**Dataset.** 157,501 normalized events from the Hassler et al. UAV cyberattack dataset (a real quadcopter testbed: DoS, replay, evil-twin) augmented with synthetic GPS-spoof / jam / MITM signatures from CICIoV2024. Mix: 66.5% benign + ~5.5% each of six attack types.
+
+**What we measure.**
+- **Latency** — submission → confirmation, as P50/P90/P95/P99. *P95 is the headline* (it's the AAM alerting SLO).
+- **Throughput** — max sustained TPS before P95 degrades >2× or failures exceed 1%.
+- **Security** — hash-chain integrity, tamper detection, unique IDs, endorsement/signature checks, finality.
+
+**Test procedure** *(per system, 30-second windows, averaged over 3 runs):*
+
+| Test | PostgreSQL | Hyperledger Fabric | Solana |
+|---|---|---|---|
+| Latency | 30,000 @ 1,000 TPS | 30 @ 1 TPS (CLI) | 300 @ 10 TPS |
+| Throughput sweep | 1,000 → 2,000 → 5,000 TPS | max sustainable | max sustainable |
+| Confirmation | synchronous commit | `AND(Org1, Org2)` endorsement + Raft ordering | finalized (~31 slots) |
+
+**Environment.** Apple M2 (macOS) · Docker Desktop · Hyperledger Fabric 2.5.10 (3 Raft orderers, 2 orgs, LevelDB) · Solana test-validator · PostgreSQL 16 · Python 3.13 (asyncio, 20-connection pool) · Rust event parser.
+
+### Where the numbers come from
+
+Every figure in this README is from a measured run on **2025-12-19** (not estimates):
+
+- **Summary** → [`results/EXPERIMENT_RESULTS.md`](results/EXPERIMENT_RESULTS.md) *(in the repo)*
+- **Raw per-event latencies** → written to `results/blast_results.csv` during the run (~8.6 MB). It is **not shipped** in the repo to keep the clone lightweight — regenerate it by re-running `blast.py`, or request the original file.
+
+To **reproduce**: PostgreSQL via [Quick Start](#quick-start) below; the full Fabric network via [`blockchain/hyperledger/README.md`](blockchain/hyperledger/README.md) (`./network.sh up createChannel deployCC`), then `python blast.py --target all`.
 
 ---
 
