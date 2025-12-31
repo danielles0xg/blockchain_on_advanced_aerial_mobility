@@ -23,6 +23,25 @@ blockchain/hyperledger/chaincode/vendor/
 *.a
 *.o
 
+# Hyperledger Fabric network - generated artifacts (keep configtx/, cryptogen/, scripts/, compose/, network.sh)
+blockchain/hyperledger/network/bin/
+blockchain/hyperledger/network/config/
+blockchain/hyperledger/network/builders/
+blockchain/hyperledger/network/install-fabric.sh
+blockchain/hyperledger/network/organizations/ordererOrganizations/
+blockchain/hyperledger/network/organizations/peerOrganizations/
+blockchain/hyperledger/network/channel-artifacts/
+blockchain/hyperledger/network/*.tar.gz
+# compiled chaincode binary from a manual `go build`
+blockchain/hyperledger/chaincode/aam_security/chaincode
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
 
 venv/
 .venv/

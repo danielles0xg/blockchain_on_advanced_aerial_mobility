@@ -375,17 +375,22 @@ class HyperledgerBlaster:
         self.chaincode = chaincode
         self.executor = ThreadPoolExecutor(max_workers=1)  # Serial execution for CLI
 
-        # Fabric test-network paths
-        home = os.path.expanduser("~")
-        self.test_network_path = f"{home}/fabric-samples/test-network"
-        self.fabric_cfg_path = f"{home}/fabric-samples/config"
-        self.bin_path = f"{home}/fabric-samples/bin"
+        # Fabric network paths - default to the repo's self-contained network
+        # (blockchain/hyperledger/network), overridable via env for an external install.
+        repo_root = os.path.dirname(os.path.abspath(__file__))
+        default_net = os.path.join(repo_root, "blockchain", "hyperledger", "network")
+        self.test_network_path = os.environ.get("FABRIC_NETWORK_HOME", default_net)
+        self.fabric_cfg_path = os.environ.get(
+            "FABRIC_CFG_PATH", os.path.join(self.test_network_path, "config"))
+        self.bin_path = os.environ.get(
+            "FABRIC_BIN", os.path.join(self.test_network_path, "bin"))
 
-        # TLS certificates
-        self.orderer_ca = f"{self.test_network_path}/organizations/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem"
-        self.org1_tls = f"{self.test_network_path}/organizations/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem"
-        self.org2_tls = f"{self.test_network_path}/organizations/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem"
-        self.msp_path = f"{self.test_network_path}/organizations/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
+        # TLS certificates (cryptogen output under <network>/organizations)
+        orgs = f"{self.test_network_path}/organizations"
+        self.orderer_ca = f"{orgs}/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem"
+        self.org1_tls = f"{orgs}/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem"
+        self.org2_tls = f"{orgs}/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem"
+        self.msp_path = f"{orgs}/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp"
 
     async def connect(self):
         print(f"  Hyperledger test-network: {self.test_network_path}")
