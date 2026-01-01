@@ -44,9 +44,9 @@ flowchart TB
     HLF --> R2["P95 2,182 ms<br/>audit only"]
     SOL --> R3["P95 15,157 ms<br/>too slow"]
 
-    style PG fill:#cfe8ff,stroke:#1f6feb
-    style HLF fill:#e7d8ff,stroke:#8957e5
-    style SOL fill:#ffd9d9,stroke:#d1242f
+    style PG fill:#cfe8ff,stroke:#1f6feb,color:#0b2942
+    style HLF fill:#e7d8ff,stroke:#8957e5,color:#2a1a4a
+    style SOL fill:#ffd9d9,stroke:#d1242f,color:#5c1111
 ```
 
 ### Research Questions
@@ -193,8 +193,8 @@ flowchart TB
         HLF{{"Hyperledger Fabric"}} --> AU["Immutable Audit<br/>Multi-Party Verify"]
     end
 
-    style RT fill:#eef6ff,stroke:#1f6feb
-    style AUD fill:#f5eeff,stroke:#8957e5
+    style RT fill:#eef6ff,stroke:#1f6feb,color:#0b2942
+    style AUD fill:#f5eeff,stroke:#8957e5,color:#2a1a4a
 ```
 
 ---
