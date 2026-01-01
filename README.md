@@ -8,13 +8,13 @@ Empirical comparison of **PostgreSQL (hash-chained)**, **Hyperledger Fabric (per
 >
 > | System | P95 latency | Verdict |
 > |---|---|---|
-> | 🟦 **PostgreSQL** (hash-chained DB) | **1.39 ms** | ✅ Fast enough for real-time **and** audit |
-> | 🟪 **Hyperledger Fabric** (permissioned) | **2,182 ms** · 22× slower | ⚠️ Audit trails only |
-> | 🟥 **Solana** (public chain) | **15,157 ms** · 152× slower | ❌ Too slow for either |
+> | **PostgreSQL** (hash-chained DB) | **1.39 ms** | Fast enough for real-time **and** audit |
+> | **Hyperledger Fabric** (permissioned) | **2,182 ms** · 22× slower | Audit trails only |
+> | **Solana** (public chain) | **15,157 ms** · 152× slower | Too slow for either |
 >
 > **Bottom line:** blockchain can't hit the **<100 ms** real-time bar — but its multi-party trust is worth it for audit. So use **both**: PostgreSQL for live alerts, with a periodic blockchain *anchor* for tamper-proof, multi-party-verifiable audit (the [hybrid architecture](#recommended-hybrid-architecture)).
 >
-> <sub>📊 Numbers are from a real run on **2025-12-19** (Apple M2). See [Experiment Design](#experiment-design) for how, and [Where the numbers come from](#where-the-numbers-come-from) for the data.</sub>
+> <sub>Numbers are from a real run on **2025-12-19** (Apple M2). See [Experiment Design](#experiment-design) for how, and [Where the numbers come from](#where-the-numbers-come-from) for the data.</sub>
 
 ---
 
@@ -40,9 +40,9 @@ flowchart TB
     PARSER --> HLF{{"Hyperledger Fabric<br/>Permissioned"}}
     PARSER --> SOL{{"Solana<br/>Public"}}
 
-    PG -->  R1["P95 1.39 ms<br/>✅ real-time + audit"]
-    HLF --> R2["P95 2,182 ms<br/>⚠️ audit only"]
-    SOL --> R3["P95 15,157 ms<br/>❌ too slow"]
+    PG -->  R1["P95 1.39 ms<br/>real-time + audit"]
+    HLF --> R2["P95 2,182 ms<br/>audit only"]
+    SOL --> R3["P95 15,157 ms<br/>too slow"]
 
     style PG fill:#cfe8ff,stroke:#1f6feb
     style HLF fill:#e7d8ff,stroke:#8957e5
@@ -131,9 +131,9 @@ struct SecurityEvent {
 
 | System | Type | Tamper-evidence | Decentralization | Role in AAM |
 |--------|------|-----------------|------------------|-------------|
-| **PostgreSQL 16** | Centralized DB + hash chain | Hash chain (SHA-256) | ❌ single admin | Real-time alerting baseline |
-| **Hyperledger Fabric 2.5** | Permissioned blockchain | Consensus + endorsement | ✅ known parties | Regulatory audit trail |
-| **Solana (Anchor 0.30)** | Public blockchain | Consensus + Ed25519 | ✅ public | Reference public-chain bound |
+| **PostgreSQL 16** | Centralized DB + hash chain | Hash chain (SHA-256) | single admin | Real-time alerting baseline |
+| **Hyperledger Fabric 2.5** | Permissioned blockchain | Consensus + endorsement | known parties | Regulatory audit trail |
+| **Solana (Anchor 0.30)** | Public blockchain | Consensus + Ed25519 | public | Reference public-chain bound |
 
 ---
 
@@ -165,11 +165,11 @@ xychart-beta
 
 | Requirement | PostgreSQL | Hyperledger | Solana |
 |-------------|:----------:|:-----------:|:------:|
-| Real-time (<100 ms P95) | ✅ PASS | ❌ FAIL | ❌ FAIL |
-| Audit trail (<5 s P95)  | ✅ PASS | ✅ PASS | ❌ FAIL |
-| Tamper evidence         | ✅ PASS | ✅ PASS | ✅ PASS |
-| Decentralization        | ❌ FAIL | ✅ PASS | ✅ PASS |
-| Regulatory compliance   | ⚠️ Partial | ✅ PASS | ⚠️ Partial |
+| Real-time (<100 ms P95) | PASS | FAIL | FAIL |
+| Audit trail (<5 s P95)  | PASS | PASS | FAIL |
+| Tamper evidence         | PASS | PASS | PASS |
+| Decentralization        | FAIL | PASS | PASS |
+| Regulatory compliance   | Partial | PASS | Partial |
 
 No single system satisfies every requirement — which motivates the hybrid design.
 
